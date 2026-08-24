@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AURA-15 — pentatonic groovebox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --case: #e4ded0;
+  --case-edge: #c7bfab;
+  --case-shadow: #b3a993;
+  --ink: #2b2822;
+  --ink-dim: #756e5f;
+  --screen-bg: #142218;
+  --screen-fg: #8fe36a;
+  --screen-fg-dim: rgba(143,227,106,0.4);
+  --accent-coral: #e2604c;
+  --accent-mustard: #e3a53f;
+  --accent-teal: #3f9c88;
+  --accent-cornflower: #5b7fc9;
+  --accent-plum: #9468a8;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Courier New', monospace;
+  --radius-case: 28px;
+  --radius-pad: 12px;
+}
+
+*{ box-sizing:border-box; }
+
+html,body{
+  margin:0;
+  min-height:100%;
+}
+
+body{
+  min-height:100vh;
+  background: radial-gradient(ellipse 80% 60% at 50% 15%, #2c2820, #17140f 75%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:40px 16px;
+  font-family: var(--font-mono);
+}
+
+#sparks{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:5;
+}
+
+.device{
+  position:relative;
+  width:min(560px, 100%);
+  background: linear-gradient(180deg, var(--case), var(--case-edge));
+  border-radius: var(--radius-case);
+  padding:26px 26px 22px;
+  box-shadow:
+    0 40px 80px -20px rgba(0,0,0,0.55),
+    0 2px 0 rgba(255,255,255,0.5) inset,
+    0 -6px 14px rgba(0,0,0,0.12) inset;
+}
+
+.plate{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  margin-bottom:22px;
+}
+
+.brand{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  padding:0 4px;
+  flex-wrap:wrap;
+  gap:4px;
+}
+.brand-name{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:22px;
+  letter-spacing:0.5px;
+  color:var(--ink);
+}
+.brand-name .dash{ color:var(--accent-coral); }
+.brand-sub{
+  font-family:var(--font-mono);
+  font-size:10px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:var(--ink-dim);
+}
+
+.screen{
+  position:relative;
+  background:var(--screen-bg);
+  border-radius:10px;
+  padding:10px 14px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.35) inset, 0 1px 0 rgba(255,255,255,0.06);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+}
+#scope{
+  display:block;
+  width:150px;
+  height:48px;
+}
+.screen-readout{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:4px;
+  font-family:var(--font-mono);
+  color:var(--screen-fg);
+  text-shadow:0 0 6px rgba(143,227,106,0.55);
+}
+#readoutNote{ font-size:18px; font-weight:700; letter-spacing:0.05em; }
+#readoutWave{ font-size:10px; letter-spacing:0.12em; color:var(--screen-fg-dim); }
+
+.pads{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:9px;
+  margin-bottom:20px;
+}
+.pad{
+  aspect-ratio:1;
+  border:none;
+  border-radius:var(--radius-pad);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  cursor:pointer;
+  font-family:var(--font-mono);
+  color:rgba(255,255,255,0.94);
+  box-shadow:
+    0 4px 0 rgba(0,0,0,0.22),
+    0 6px 10px rgba(0,0,0,0.18);
+  transition:transform .06s ease, box-shadow .06s ease, filter .15s ease;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.pad .note{ font-size:12px; font-weight:700; letter-spacing:0.03em; }
+.pad .key{ font-size:9px; opacity:0.75; letter-spacing:0.08em; text-transform:uppercase; }
+
+.pad:nth-child(5n+1){ background:var(--accent-coral); }
+.pad:nth-child(5n+2){ background:var(--accent-mustard); }
+.pad:nth-child(5n+3){ background:var(--accent-teal); }
+.pad:nth-child(5n+4){ background:var(--accent-cornflower); }
+.pad:nth-child(5n+5){ background:var(--accent-plum); }
+
+.pad:active,
+.pad.is-active{
+  transform:translateY(3px);
+  box-shadow:0 1px 0 rgba(0,0,0,0.22), 0 2px 4px rgba(0,0,0,0.18);
+  filter:brightness(1.18) saturate(1.15);
+}
+.pad:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+
+.controls{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:16px;
+  padding:14px 6px 4px;
+  border-top:1px solid rgba(0,0,0,0.08);
+}
+.control-group{ display:flex; align-items:center; gap:8px; }
+
+.waveforms{ gap:6px; }
+.wave-btn{
+  width:34px;
+  height:28px;
+  border:none;
+  border-radius:7px;
+  background:rgba(0,0,0,0.06);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:background .2s ease;
+}
+.wave-btn svg{
+  width:20px;
+  height:10px;
+  fill:none;
+  stroke:var(--ink-dim);
+  stroke-width:1.6;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.wave-btn.active{ background:var(--ink); }
+.wave-btn.active svg{ stroke:var(--case); }
+.wave-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+
+.fader-group{ flex:1; min-width:120px; gap:10px; }
+.fader-group label{
+  font-size:10px;
+  letter-spacing:0.1em;
+  color:var(--ink-dim);
+}
+input[type=range]{
+  -webkit-appearance:none;
+  appearance:none;
+  flex:1;
+  height:4px;
+  background:var(--case-shadow);
+  border-radius:999px;
+  outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  background:var(--ink);
+  box-shadow:0 2px 4px rgba(0,0,0,0.3);
+  cursor:pointer;
+}
+input[type=range]::-moz-range-thumb{
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  background:var(--ink);
+  border:none;
+  cursor:pointer;
+}
+
+.toggles{ gap:6px; }
+.toggle-btn{
+  font-family:var(--font-mono);
+  font-size:10px;
+  letter-spacing:0.08em;
+  padding:8px 10px;
+  border:none;
+  border-radius:7px;
+  background:rgba(0,0,0,0.06);
+  color:var(--ink-dim);
+  cursor:pointer;
+  transition:background .2s ease, color .2s ease, box-shadow .2s ease;
+}
+.toggle-btn.active{
+  background:var(--accent-teal);
+  color:#fff;
+  box-shadow:0 0 0 3px rgba(63,156,136,0.25);
+}
+.toggle-btn:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+
+.hint{
+  margin:16px 4px 2px;
+  font-size:11px;
+  color:var(--ink-dim);
+  text-align:center;
+}
+.hint kbd{
+  font-family:var(--font-mono);
+  background:rgba(0,0,0,0.08);
+  border-radius:4px;
+  padding:1px 5px;
+  font-size:10px;
+}
+
+@media (max-width:480px){
+  .device{ padding:18px 16px 16px; border-radius:20px; }
+  #scope{ width:110px; }
+  .fader-group{ order:3; flex-basis:100%; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .pad, .wave-btn, .toggle-btn{ transition:none; }
+}
+
+</style>
+</head>
+<body>
+
+<canvas id="sparks" aria-hidden="true"></canvas>
+
+<div class="device">
+  <div class="plate">
+    <div class="brand">
+      <span class="brand-name">AURA<span class="dash">–</span>15</span>
+      <span class="brand-sub">pentatonic groovebox &middot; mod. AR15-C</span>
+    </div>
+    <div class="screen">
+      <canvas id="scope" width="260" height="72"></canvas>
+      <div class="screen-readout">
+        <span id="readoutNote">&mdash; &mdash;</span>
+        <span id="readoutWave">SINE</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="pads" id="pads"><!-- pads injected by script.js --></div>
+
+  <div class="controls">
+    <div class="control-group waveforms" role="group" aria-label="Waveform">
+      <button class="wave-btn active" data-wave="sine" aria-pressed="true" title="Sine">
+        <svg viewBox="0 0 32 16"><path d="M0 8 C4 0 12 0 16 8 C20 16 28 16 32 8"/></svg>
+      </button>
+      <button class="wave-btn" data-wave="triangle" aria-pressed="false" title="Triangle">
+        <svg viewBox="0 0 32 16"><path d="M0 8 L8 0 L16 8 L24 16 L32 8"/></svg>
+      </button>
+      <button class="wave-btn" data-wave="sawtooth" aria-pressed="false" title="Saw">
+        <svg viewBox="0 0 32 16"><path d="M0 16 L0 0 L16 16 L16 0 L32 16"/></svg>
+      </button>
+      <button class="wave-btn" data-wave="square" aria-pressed="false" title="Square">
+        <svg viewBox="0 0 32 16"><path d="M0 14 L0 2 L16 2 L16 14 L32 14 L32 2"/></svg>
+      </button>
+    </div>
+
+    <div class="control-group fader-group">
+      <label for="volume">LEVEL</label>
+      <input type="range" id="volume" min="0" max="1" step="0.01" value="0.7">
+    </div>
+
+    <div class="control-group toggles">
+      <button class="toggle-btn" id="echoBtn" aria-pressed="false">ECHO</button>
+      <button class="toggle-btn" id="holdBtn" aria-pressed="false">HOLD</button>
+    </div>
+  </div>
+
+  <p class="hint">Play with <kbd>1</kbd>&ndash;<kbd>5</kbd> &middot; <kbd>Q</kbd>&ndash;<kbd>T</kbd> &middot; <kbd>A</kbd>&ndash;<kbd>G</kbd>, or tap the pads. <kbd>HOLD</kbd> sustains a pad while pressed.</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- note data: C major pentatonic across three octaves ----
+  var NOTES = [
+    {name:'C4', freq:261.63, key:'1'},
+    {name:'D4', freq:293.66, key:'2'},
+    {name:'E4', freq:329.63, key:'3'},
+    {name:'G4', freq:392.00, key:'4'},
+    {name:'A4', freq:440.00, key:'5'},
+    {name:'C5', freq:523.25, key:'Q'},
+    {name:'D5', freq:587.33, key:'W'},
+    {name:'E5', freq:659.25, key:'E'},
+    {name:'G5', freq:783.99, key:'R'},
+    {name:'A5', freq:880.00, key:'T'},
+    {name:'C6', freq:1046.50, key:'A'},
+    {name:'D6', freq:1174.66, key:'S'},
+    {name:'E6', freq:1318.51, key:'D'},
+    {name:'G6', freq:1567.98, key:'F'},
+    {name:'A6', freq:1760.00, key:'G'}
+  ];
+
+  var ACCENTS = ['#e2604c','#e3a53f','#3f9c88','#5b7fc9','#9468a8'];
+
+  var padsEl = document.getElementById('pads');
+  var readoutNote = document.getElementById('readoutNote');
+  var readoutWave = document.getElementById('readoutWave');
+  var volumeEl = document.getElementById('volume');
+  var echoBtn = document.getElementById('echoBtn');
+  var holdBtn = document.getElementById('holdBtn');
+  var waveBtns = document.querySelectorAll('.wave-btn');
+
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- build pads ----
+  var padEls = {};
+  NOTES.forEach(function(n){
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pad';
+    btn.dataset.note = n.name;
+    btn.setAttribute('aria-label', 'Play ' + n.name + ', key ' + n.key);
+    btn.innerHTML = '<span class="note">' + n.name + '</span><span class="key">' + n.key + '</span>';
+    padsEl.appendChild(btn);
+    padEls[n.name] = btn;
+  });
+
+  // ---- audio graph (created lazily on first interaction) ----
+  var audioCtx = null;
+  var masterGain, scopeAnalyser, delayNode, feedbackGain, delayWet;
+  var currentWave = 'sine';
+  var sustainOn = false;
+  var echoOn = false;
+  var activeVoices = {}; // note.name -> {osc, env}
+
+  function ensureAudio(){
+    if(audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = parseFloat(volumeEl.value);
+
+    scopeAnalyser = audioCtx.createAnalyser();
+    scopeAnalyser.fftSize = 1024;
+
+    delayNode = audioCtx.createDelay(1.0);
+    delayNode.delayTime.value = 0.28;
+    feedbackGain = audioCtx.createGain();
+    feedbackGain.gain.value = 0.32;
+    delayWet = audioCtx.createGain();
+    delayWet.gain.value = 0;
+
+    masterGain.connect(scopeAnalyser);
+    scopeAnalyser.connect(audioCtx.destination);
+
+    masterGain.connect(delayNode);
+    delayNode.connect(feedbackGain);
+    feedbackGain.connect(delayNode);
+    delayNode.connect(delayWet);
+    delayWet.connect(audioCtx.destination);
+
+    if(audioCtx.state === 'suspended'){ audioCtx.resume(); }
+
+    startScope();
+  }
+
+  volumeEl.addEventListener('input', function(){
+    if(masterGain) masterGain.gain.setTargetAtTime(parseFloat(volumeEl.value), audioCtx.currentTime, 0.01);
+  });
+
+  waveBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      waveBtns.forEach(function(b){ b.classList.remove('active'); b.setAttribute('aria-pressed','false'); });
+      btn.classList.add('active');
+      btn.setAttribute('aria-pressed','true');
+      currentWave = btn.dataset.wave;
+      readoutWave.textContent = currentWave.toUpperCase();
+    });
+  });
+
+  echoBtn.addEventListener('click', function(){
+    ensureAudio();
+    echoOn = !echoOn;
+    echoBtn.classList.toggle('active', echoOn);
+    echoBtn.setAttribute('aria-pressed', echoOn ? 'true' : 'false');
+    delayWet.gain.setTargetAtTime(echoOn ? 0.4 : 0, audioCtx.currentTime, 0.05);
+  });
+
+  holdBtn.addEventListener('click', function(){
+    sustainOn = !sustainOn;
+    holdBtn.classList.toggle('active', sustainOn);
+    holdBtn.setAttribute('aria-pressed', sustainOn ? 'true' : 'false');
+  });
+
+  // ---- note trigger ----
+  function noteOn(note){
+    ensureAudio();
+    if(audioCtx.state === 'suspended'){ audioCtx.resume(); }
+    if(activeVoices[note.name]) return; // already sounding
+
+    var t = audioCtx.currentTime;
+    var osc = audioCtx.createOscillator();
+    osc.type = currentWave;
+    osc.frequency.setValueAtTime(note.freq, t);
+
+    var env = audioCtx.createGain();
+    env.gain.setValueAtTime(0, t);
+    env.gain.linearRampToValueAtTime(0.85, t + 0.012);
+
+    osc.connect(env);
+    env.connect(masterGain);
+    osc.start(t);
+
+    if(sustainOn){
+      activeVoices[note.name] = { osc: osc, env: env };
+    } else {
+      env.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      osc.stop(t + 0.95);
+    }
+
+    readoutNote.textContent = note.name;
+    var idx = NOTES.indexOf(note);
+    spark(padEls[note.name], ACCENTS[idx % 5]);
+    padEls[note.name].classList.add('is-active');
+  }
+
+  function noteOff(note){
+    var voice = activeVoices[note.name];
+    if(!voice){
+      if(padEls[note.name]) padEls[note.name].classList.remove('is-active');
+      return;
+    }
+    var t = audioCtx.currentTime;
+    voice.env.gain.cancelScheduledValues(t);
+    voice.env.gain.setValueAtTime(voice.env.gain.value, t);
+    voice.env.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+    voice.osc.stop(t + 0.4);
+    delete activeVoices[note.name];
+    padEls[note.name].classList.remove('is-active');
+  }
+
+  // ---- pad pointer interaction ----
+  NOTES.forEach(function(n){
+    var el = padEls[n.name];
+    el.addEventListener('pointerdown', function(e){ e.preventDefault(); noteOn(n); });
+    el.addEventListener('pointerup', function(){ noteOff(n); });
+    el.addEventListener('pointerleave', function(){ if(activeVoices[n.name]) noteOff(n); });
+    el.addEventListener('pointercancel', function(){ if(activeVoices[n.name]) noteOff(n); });
+  });
+
+  // ---- computer keyboard interaction ----
+  var keyToNote = {};
+  NOTES.forEach(function(n){ keyToNote[n.key.toUpperCase()] = n; });
+  var heldKeys = {};
+  window.addEventListener('keydown', function(e){
+    var k = e.key.toUpperCase();
+    if(!keyToNote[k] || heldKeys[k]) return;
+    heldKeys[k] = true;
+    noteOn(keyToNote[k]);
+  });
+  window.addEventListener('keyup', function(e){
+    var k = e.key.toUpperCase();
+    if(!keyToNote[k]) return;
+    delete heldKeys[k];
+    noteOff(keyToNote[k]);
+  });
+
+  // ---- oscilloscope ----
+  var scopeCanvas = document.getElementById('scope');
+  var scopeCtx = scopeCanvas.getContext('2d');
+  var scopeData;
+
+  function startScope(){
+    scopeData = new Uint8Array(scopeAnalyser.fftSize);
+    requestAnimationFrame(drawScope);
+  }
+  function drawScope(){
+    requestAnimationFrame(drawScope);
+    if(!scopeAnalyser) return;
+    scopeAnalyser.getByteTimeDomainData(scopeData);
+    var w = scopeCanvas.width, h = scopeCanvas.height;
+    scopeCtx.clearRect(0,0,w,h);
+    scopeCtx.beginPath();
+    scopeCtx.strokeStyle = '#8fe36a';
+    scopeCtx.lineWidth = 2;
+    var step = w / scopeData.length;
+    for(var i=0;i<scopeData.length;i++){
+      var v = scopeData[i] / 128.0;
+      var y = (v * h) / 2;
+      var x = i * step;
+      if(i===0) scopeCtx.moveTo(x,y); else scopeCtx.lineTo(x,y);
+    }
+    scopeCtx.stroke();
+  }
+  // idle line before audio starts
+  scopeCtx.strokeStyle = '#2f4a37';
+  scopeCtx.lineWidth = 2;
+  scopeCtx.beginPath();
+  scopeCtx.moveTo(0, scopeCanvas.height/2);
+  scopeCtx.lineTo(scopeCanvas.width, scopeCanvas.height/2);
+  scopeCtx.stroke();
+
+  // ---- spark particles (full-page canvas overlay) ----
+  var sparkCanvas = document.getElementById('sparks');
+  var sparkCtx = sparkCanvas.getContext('2d');
+  var particles = [];
+
+  function resizeSparks(){
+    sparkCanvas.width = window.innerWidth;
+    sparkCanvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeSparks);
+  resizeSparks();
+
+  function spark(el, color){
+    if(!el) return;
+    var rect = el.getBoundingClientRect();
+    var cx = rect.left + rect.width/2;
+    var cy = rect.top + rect.height/2;
+    var count = reducedMotion ? 3 : 10;
+    for(var i=0;i<count;i++){
+      var angle = Math.random()*Math.PI*2;
+      var speed = Math.random()*2.6+0.8;
+      particles.push({
+        x:cx, y:cy,
+        vx:Math.cos(angle)*speed,
+        vy:Math.sin(angle)*speed,
+        life:1,
+        decay: Math.random()*0.02+0.02,
+        color: color,
+        size: Math.random()*2.4+1.4
+      });
+    }
+  }
+
+  function tickSparks(){
+    requestAnimationFrame(tickSparks);
+    sparkCtx.clearRect(0,0,sparkCanvas.width, sparkCanvas.height);
+    sparkCtx.globalCompositeOperation = 'lighter';
+    for(var i=particles.length-1;i>=0;i--){
+      var p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      p.vx *= 0.96; p.vy *= 0.96;
+      p.life -= p.decay;
+      if(p.life<=0){ particles.splice(i,1); continue; }
+      sparkCtx.beginPath();
+      sparkCtx.fillStyle = p.color;
+      sparkCtx.globalAlpha = Math.max(p.life,0);
+      sparkCtx.arc(p.x,p.y,p.size,0,Math.PI*2);
+      sparkCtx.fill();
+    }
+    sparkCtx.globalAlpha = 1;
+    sparkCtx.globalCompositeOperation = 'source-over';
+  }
+  requestAnimationFrame(tickSparks);
+
+})();
+
+</script>
+</body>
+</html>
