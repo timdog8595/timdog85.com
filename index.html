@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AURA-15 — pentatonic groovebox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<canvas id="sparks" aria-hidden="true"></canvas>
+
+<div class="device">
+  <div class="plate">
+    <div class="brand">
+      <span class="brand-name">AURA<span class="dash">–</span>15</span>
+      <span class="brand-sub">pentatonic groovebox &middot; mod. AR15-C</span>
+    </div>
+    <div class="screen">
+      <canvas id="scope" width="260" height="72"></canvas>
+      <div class="screen-readout">
+        <span id="readoutNote">&mdash; &mdash;</span>
+        <span id="readoutWave">SINE</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="pads" id="pads"><!-- pads injected by script.js --></div>
+
+  <div class="controls">
+    <div class="control-group waveforms" role="group" aria-label="Waveform">
+      <button class="wave-btn active" data-wave="sine" aria-pressed="true" title="Sine">
+        <svg viewBox="0 0 32 16"><path d="M0 8 C4 0 12 0 16 8 C20 16 28 16 32 8"/></svg>
+      </button>
+      <button class="wave-btn" data-wave="triangle" aria-pressed="false" title="Triangle">
+        <svg viewBox="0 0 32 16"><path d="M0 8 L8 0 L16 8 L24 16 L32 8"/></svg>
+      </button>
+      <button class="wave-btn" data-wave="sawtooth" aria-pressed="false" title="Saw">
+        <svg viewBox="0 0 32 16"><path d="M0 16 L0 0 L16 16 L16 0 L32 16"/></svg>
+      </button>
+      <button class="wave-btn" data-wave="square" aria-pressed="false" title="Square">
+        <svg viewBox="0 0 32 16"><path d="M0 14 L0 2 L16 2 L16 14 L32 14 L32 2"/></svg>
+      </button>
+    </div>
+
+    <div class="control-group fader-group">
+      <label for="volume">LEVEL</label>
+      <input type="range" id="volume" min="0" max="1" step="0.01" value="0.7">
+    </div>
+
+    <div class="control-group toggles">
+      <button class="toggle-btn" id="echoBtn" aria-pressed="false">ECHO</button>
+      <button class="toggle-btn" id="holdBtn" aria-pressed="false">HOLD</button>
+    </div>
+  </div>
+
+  <p class="hint">Play with <kbd>1</kbd>&ndash;<kbd>5</kbd> &middot; <kbd>Q</kbd>&ndash;<kbd>T</kbd> &middot; <kbd>A</kbd>&ndash;<kbd>G</kbd>, or tap the pads. <kbd>HOLD</kbd> sustains a pad while pressed.</p>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
