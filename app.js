@@ -17,13 +17,13 @@ const ACTS = ["auction", "gamble", "offer"];
 const ACT_LABEL = { auction: "Join Auction", gamble: "Join Gamble", offer: "Join Offer" };
 const DAY = 24 * 60 * 60 * 1000;
 
-// Wheel: Nothing 50% (two slices), TMW's Choice 25%, Spin Again 20%, Your Choice 5%
+// Wheel: Nothing 54% (two slices), TMW's Choice 25%, Spin Again 20%, Your Choice 1%
 const WHEEL = [
-  { key: "nothing", label: "Nothing", deg: 90, color: "#5b5266" },
+  { key: "nothing", label: "Nothing", deg: 97.2, color: "#5b5266" },
   { key: "tmw", label: "TMW's Choice", deg: 90, color: "#ff8a3d" },
-  { key: "nothing", label: "Nothing", deg: 90, color: "#6b6177" },
+  { key: "nothing", label: "Nothing", deg: 97.2, color: "#6b6177" },
   { key: "again", label: "Spin Again", deg: 72, color: "#b86bff" },
-  { key: "your", label: "Your Choice", deg: 18, color: "#3ecf8e" },
+  { key: "your", label: "★", deg: 3.6, color: "#3ecf8e" },
 ];
 
 let me = localStorage.getItem("candy_user");
@@ -342,7 +342,7 @@ function drawWheel(rot) {
     x.beginPath(); x.moveTo(0, 0); x.arc(0, 0, r - 6, a0, a1); x.closePath();
     x.fillStyle = s.color; x.fill(); x.strokeStyle = "#1b1424"; x.lineWidth = 4; x.stroke();
     x.save(); x.rotate((((start + s.deg / 2) * Math.PI) / 180));
-    x.fillStyle = "#fff"; x.font = `bold ${s.deg < 30 ? 22 : 30}px system-ui`; x.textAlign = "right"; x.textBaseline = "middle";
+    x.fillStyle = "#fff"; x.font = `bold ${s.deg < 30 ? 16 : 30}px system-ui`; x.textAlign = "right"; x.textBaseline = "middle";
     x.fillText(s.label, r - 26, 0); x.restore();
     start += s.deg;
   }
@@ -507,7 +507,8 @@ function adminHtml() {
     return `<div class="offer" style="margin-bottom:.7em"><div class="row spread"><b>${p} (${own.length})</b>
       <button class="small secondary" data-give="${p}">Give candy</button></div>
       ${own.length ? `<div class="grid">${own.map((c) => `<div class="card">${card(c).replace(/^<div[^>]*>|<\/div>$/g, "")}
-        <button class="ghost small" data-return="${esc(c.id)}" style="margin-top:.3em;width:100%">Return</button></div>`).join("")}</div>` : `<p class="muted">None</p>`}</div>`;
+        <button class="ghost small" data-return="${esc(c.id)}" style="margin-top:.3em;width:100%">Return</button>
+        <button class="bad small" data-eat="${esc(c.id)}" style="margin-top:.3em;width:100%">Ate it 🗑</button></div>`).join("")}</div>` : `<p class="muted">None</p>`}</div>`;
   }).join("");
   const log = D.activity.map((a) => `<div class="${a.needs_action ? "act" : ""}">
       <span class="muted">${new Date(a.created_at).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span> — ${esc(a.message)}
@@ -523,7 +524,8 @@ function adminHtml() {
     </div></div>
   <div class="panel"><h3>"TMW's Choice" wheel prizes</h3>
     <p class="muted">If a player lands on TMW's Choice, they get whatever you set here.</p>${prizeRows}</div>
-  <div class="panel"><h3>Who has what</h3>${holders}</div>
+  <div class="panel"><div class="row spread"><h3>Who has what</h3>
+    <button class="bad small" id="eatPoolBtn">Remove unclaimed candy 🗑</button></div>${holders}</div>
   <div class="panel"><h3>Activity</h3><div class="log">${log}</div></div>`;
 }
 
@@ -560,6 +562,22 @@ function bindAdmin() {
     fail((await sb.from("candy").update({ owner: null, won_how: null, won_at: null }).eq("id", c.id)).error);
     await logAct(`${c.name} returned to the pool (was ${c.owner}'s)`);
   }));
+  document.querySelectorAll("[data-eat]").forEach((b) => (b.onclick = async () => {
+    const c = candy(b.dataset.eat);
+    if (!confirm(`Delete ${c.name} from ${c.owner}'s list for good?`)) return;
+    if (fail((await sb.from("candy").delete().eq("id", c.id)).error)) return;
+    await logAct(`${c.name} was eaten (from ${c.owner}'s list) and deleted`);
+    toast(`${c.name} deleted.`);
+  }));
+  $("#eatPoolBtn").onclick = async () => {
+    const ids = await openPicker({ title: "Pick unclaimed candy to delete", multi: true });
+    if (!ids?.length) return;
+    const gone = ids.map(candy).filter(Boolean);
+    if (!confirm(`Delete ${names(gone)} for good?`)) return;
+    if (fail((await sb.from("candy").delete().in("id", ids)).error)) return;
+    await logAct(`Deleted unclaimed candy: ${names(gone)}`);
+    toast(`Deleted ${gone.length} piece${gone.length > 1 ? "s" : ""}.`);
+  };
   document.querySelectorAll("[data-ack]").forEach((b) => (b.onclick = async () => {
     fail((await sb.from("activity").update({ needs_action: false }).eq("id", Number(b.dataset.ack))).error);
   }));
